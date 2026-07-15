@@ -88,7 +88,6 @@ export const ALL_COUNTRIES: { code: string; name: string }[] = [
   { code: "hu", name: "Hungary" },
   { code: "id", name: "Indonesia" },
   { code: "ie", name: "Ireland" },
-  { code: "il", name: "Israel" },
   { code: "in", name: "India" },
   { code: "iq", name: "Iraq" },
   { code: "ir", name: "Iran" },

@@ -3,7 +3,7 @@
   "name": "anyone-vpn-app",
   "description": "Anyone",
   "productName": "AnyoneVPN",
-  "version": "1.0.2",
+  "version": "1.0.5-beta",
   "author": "Anyone Team <team@anyone.io>",
   "main": "app/main.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "create:dmg": "node scripts/create-dmg.js"
   },
   "dependencies": {
-    "@anyone-protocol/anyone-client": "file:../anon-protocol-npm/anyone-protocol-anyone-client-1.1.9-beta.0.tgz",
+    "@anyone-protocol/anyone-client": "file:anyone-protocol-anyone-client-1.1.11-beta.0.tgz",
     "@babel/runtime-corejs3": "^7.27.3",
     "@lwtlab/node-mac-app-icon": "^0.1.0",
     "auto-launch": "^5.0.6",
@@ -82,6 +82,7 @@
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
+      "icon": "resources/icon.icns",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "identity": "Apple Development: Sarvesh Rajdev (GXAG86Q5C2)"
@@ -97,7 +98,28 @@
       ]
     },
     "dmg": {
-      "sign": true
+      "sign": true,
+      "title": "Install AnyoneVPN",
+      "icon": "resources/icon.icns",
+      "background": "resources/background.png",
+      "iconSize": 80,
+      "window": {
+        "width": 751,
+        "height": 473
+      },
+      "contents": [
+        {
+          "x": 185,
+          "y": 235,
+          "type": "file"
+        },
+        {
+          "x": 570,
+          "y": 235,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "afterSign": "notarize.js",
     "linux": {

@@ -61,7 +61,7 @@ if (!gotTheLock) {
     if (process.platform === "darwin") {
       app.setAboutPanelOptions({
         applicationName: "Anyone VPN",
-        applicationVersion: "1.0.2",
+        applicationVersion: "1.0.5-beta",
         copyright: "© 2023 Anyone VPN Inc.",
         credits: "Developed by Anyone VPN Team",
         iconPath: path.join(app.getAppPath(), "resources", "icon.png"),
