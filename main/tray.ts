@@ -14,6 +14,18 @@ export function UpdateTrayIcon() {
 
   const icon = nativeImage.createFromPath(iconPath);
   state.tray?.tray?.setImage(icon);
+
+  // Keep the normal Dock icon while disconnected, and show a subtle
+  // cyan status indicator while the Anyone proxy is connected.
+  if (process.platform === "darwin") {
+    const dockIconPath = path.join(
+      app.getAppPath(),
+      "resources",
+      state.isProxyRunning ? "icon-connected.png" : "icon.png"
+    );
+
+    app.dock.setIcon(dockIconPath);
+  }
 }
 
 // export function createTray(mainWindow: BrowserWindow) {

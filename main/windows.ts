@@ -187,16 +187,41 @@ export function expandMainWindow() {
   }
 }
 
-export function minimizeMainWindow() {
+export async function minimizeMainWindow() {
   const { mainWindow } = state;
-  if (mainWindow) {
-    mainWindow.setSize(400, 700);
-    mainWindow.center();
-    // if (isProd) {
-    //   mainWindow.loadURL("app://./index.html");
-    // } else {
-    //   const port = process.argv[2];
-    //   mainWindow.loadURL(`http://localhost:${port}/`);
-    // }
+
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    throw new Error("Main window is not available");
   }
+
+  // macOS native fullscreen must be exited before resizing the window.
+  if (mainWindow.isFullScreen()) {
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+
+      const onLeaveFullScreen = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        mainWindow.removeListener("leave-full-screen", onLeaveFullScreen);
+
+        if (mainWindow.isFullScreen()) {
+          reject(new Error("Timed out while leaving fullscreen"));
+        } else {
+          resolve();
+        }
+      }, 2000);
+
+      mainWindow.once("leave-full-screen", onLeaveFullScreen);
+      mainWindow.setFullScreen(false);
+    });
+  }
+
+  mainWindow.setSize(400, 700);
 }

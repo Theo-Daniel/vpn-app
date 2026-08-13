@@ -80,7 +80,6 @@ if (!gotTheLock) {
         );
 
         app.dock.setIcon(dockedIconPath);
-        app.dock.setBadge("Anyone");
 
         app.dock.show();
       }

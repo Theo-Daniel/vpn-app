@@ -177,20 +177,33 @@ const IPCard: React.FC<IPCardProps> = ({
           <Text fontSize="xs" fontWeight="500" color={headerBgColor}>
             {value}
           </Text>
-          {isCopied ? (
-            <TbCopyCheck
-              size="15px"
-              color={menuTextColor}
-              style={{ cursor: "pointer", marginTop: "2px" }}
-            />
-          ) : (
-            <TbCopy
-              size="14px"
-              color={menuTextColor}
-              style={{ cursor: "pointer", marginTop: "2px" }}
-              onClick={handleCopy}
-            />
-          )}
+      <Box
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        p="3px"
+        m="-3px"
+        cursor="pointer"
+        transition="filter 0.15s ease"
+        _hover={{
+          filter: "drop-shadow(0 0 3px rgba(255,255,255,0.40))",
+        }}
+        onClick={isCopied ? undefined : handleCopy}
+      >
+        {isCopied ? (
+          <TbCopyCheck
+            size="15px"
+            color={menuTextColor}
+            style={{ marginTop: "2px" }}
+          />
+        ) : (
+          <TbCopy
+            size="14px"
+            color={menuTextColor}
+            style={{ marginTop: "2px" }}
+          />
+        )}
+      </Box>
         </Flex>
 
         <Box>
@@ -206,20 +219,48 @@ const IPCard: React.FC<IPCardProps> = ({
         </Box>
 
         <Flex gap={2}>
-          <Button size="sm" onClick={onOpen} colorScheme="">
+          <Button
+          size="sm"
+          onClick={onOpen}
+          colorScheme=""
+          bg="transparent"
+          _hover={{ bg: "rgba(255,255,255,0.06)" }}
+          transition="background 0.15s ease"
+        >
             <FiSettings color={menuTextColor} />
           </Button>
 
-          <Button size="sm" onClick={onSettingsOpen} colorScheme="">
+          <Button
+          size="sm"
+          onClick={onSettingsOpen}
+          colorScheme=""
+          bg="transparent"
+          _hover={{ bg: "rgba(255,255,255,0.06)" }}
+          transition="background 0.15s ease"
+        >
             <MdSecurity color={menuTextColor} />
           </Button>
 
           {expanded ? (
-            <Button size="sm" onClick={handleMinimizeClick} colorScheme="">
+            <Button
+          size="sm"
+          onClick={handleMinimizeClick}
+          colorScheme=""
+          bg="transparent"
+          _hover={{ bg: "rgba(255,255,255,0.06)" }}
+          transition="background 0.15s ease"
+        >
               <SlArrowLeft color={menuTextColor} />
             </Button>
           ) : (
-            <Button size="sm" onClick={handleExpandClick} colorScheme="">
+            <Button
+          size="sm"
+          onClick={handleExpandClick}
+          colorScheme=""
+          bg="transparent"
+          _hover={{ bg: "rgba(255,255,255,0.06)" }}
+          transition="background 0.15s ease"
+        >
               <SlArrowRight color={menuTextColor} />
             </Button>
           )}

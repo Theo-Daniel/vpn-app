@@ -10,6 +10,11 @@ import {
   Grid,
   GridItem,
   Button,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
 } from "@chakra-ui/react";
 import { useAppContext } from "../context/AppProvider";
 import { motion } from "framer-motion"; // Import framer-motion
@@ -26,13 +31,6 @@ const ProxyStatus = dynamic(() => import("../components/ProxyStatus"), {
   ssr: false,
 });
 
-const GroupedProcesses = dynamic(
-  () => import("../components/GroupedProcesses"),
-  {
-    ssr: false,
-  }
-);
-
 const GlobeComponent = dynamic(
   () => import("../components/Globe/GlobeComponent"),
   {
@@ -42,6 +40,21 @@ const GlobeComponent = dynamic(
 
 const CircuitPathView = dynamic(
   () => import("../components/CircuitPathView"),
+  { ssr: false }
+);
+
+const RulesPanel = dynamic(
+  () => import("../components/RulesPanel"),
+  { ssr: false }
+);
+
+const ActivityPanel = dynamic(
+  () => import("../components/ActivityPanel"),
+  { ssr: false }
+);
+
+const ConnectionSidebar = dynamic(
+  () => import("../components/ConnectionSidebar"),
   { ssr: false }
 );
 
@@ -101,7 +114,7 @@ function ExpandedHomePage() {
     },
   };
 
-  const [showMore, setShowMore] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   return (
     <Box
@@ -164,196 +177,144 @@ function ExpandedHomePage() {
               colSpan={1}
               rowSpan={1}
               h="100vh"
-              overflow={"hidden"}
-              p="0px"
+              overflow="hidden"
             >
-              <Box
-                p={0}
-                textAlign="center"
-                overflow="hidden"
-                h="calc(100%)"
-                border="1px solid rgba(255, 255, 255, 0.04)"
-                borderRadius="6px"
-                background={mainContainerBgColor}
-              >
-                <Stack
-                  spacing={4}
-                  align="center"
-                  justifyContent="flex-start"
-                  minH="100%"
-                >
-                  {/* Connection Status */}
-
-                  {/* IP Addresses */}
-                  <Flex
-                    textAlign="center"
-                    justify={"center"}
-                    align={"flex-start"}
-                    gap="1"
-                    zIndex={1}
-                    position="relative"
-                    p=" 0px"
-                    w="100%"
-                  >
-                    <Box
-                      position="absolute"
-                      bottom={0}
-                      left={0}
-                      width="100%"
-                      height="1px"
-                      background="linear-gradient(to right, rgba(22, 81, 103, 0), rgba(22, 81, 103, 0.8), rgba(22, 81, 103, 0))"
-                    />
-                    <IPCard
-                      label="Proxy IP"
-                      value={proxyRunning ? (proxyIP || "-") : "-"}
-                      bgColor={bgColor}
-                      menuTextColor={menuTextColor}
-                      headerBgColor={ipcCardText}
-                      status={proxyRunning ? "Anyone" : ""}
-                    />
-
-                    {/* <IPCard
-                        label="Relay IP"
-                        value={relayIP || "-"}
-                        bgColor={bgColor}
-                        menuTextColor={menuTextColor}
-                        headerBgColor={ipcCardText}
-                      /> */}
-                  </Flex>
-
-                  {/* Connect/Disconnect Button */}
-                  <AnimatedButton
-                    proxyRunning={proxyRunning}
-                    handleStartProxy={handleStartProxy}
-                    handleStopProxy={handleStopProxy}
-                    isLoading={isLoading}
-                    expanded={true}
-                    appBooted={appBooted}
-                  />
-
-                  <GlobalExitCountrySelector
-                    globalExitCountry={globalExitCountry}
-                    setGlobalExitCountry={setGlobalExitCountry}
-                    menuTextColor={menuTextColor}
-                    headerBgColor={ipcCardText}
-                  />
-
-                  <Flex
-                    flexDirection={"column"}
-                    justify={"center"}
-                    gap="0px"
-                    w="100%"
-                    alignItems="stretch"
-                  >
-                    <ProxyStatus
-                      appBooted={appBooted}
-                      isLoading={isLoading}
-                      proxyRunning={proxyRunning}
-                      realLocation={realLocation}
-                      relayLocation={relayLocation}
-                      proxyLocation={proxyLocation}
-                      bgColor={bgColor}
-                      showCountries={true}
-                      menuTextColor={menuTextColor}
-                      connectionTime={connectionTime}
-                      expanded={true}
-                      handleStartProxy={handleStartProxy}
-                      handleStopProxy={handleStopProxy}
-                      numberOfRelays={numberOfRelays}
-                      circuitHopCountries={circuitHopCountries}
-                    />
-                  </Flex>
-                </Stack>
-              </Box>
+              <ConnectionSidebar />
             </GridItem>
 
-            <GridItem colSpan={1} rowSpan={1} overflowX={showAnimations ? "visible" : "hidden"}>
-              {showAnimations ? (
-                <Flex
-                  justifyContent="center"
-                  alignItems="center"
-                  position="relative"
-                  h="100%"
-                  w="100%"
-                  overflow="hidden"
-                  bg="black"
+            <GridItem
+              colSpan={1}
+              rowSpan={1}
+              overflow="hidden"
+              bg="#0D0F12"
+            >
+              <Tabs
+                index={activeTab}
+                onChange={setActiveTab}
+                variant="unstyled"
+                h="100%"
+                display="flex"
+                flexDirection="column"
+              >
+                <TabList
+                  h="54px"
+                  flexShrink={0}
+                  px={5}
+                  alignItems="flex-end"
+                  gap={8}
+                  borderBottom="1px solid rgba(255,255,255,0.08)"
+                  bg="#111316"
                 >
-                  <Box
-                    position="absolute"
-                    h={screenSize.height}
-                    w={screenSize.width * 0.8}
-                    overflow="hidden"
-                    border="1px solid rgba(22, 81, 103, 0.8)"
+                  <Tab
+                    h="54px"
+                    px={1}
+                    color="gray.500"
+                    fontSize="13px"
+                    fontWeight="500"
+                    borderBottom="2px solid transparent"
+                    _selected={{
+                      color: "white",
+                      borderBottomColor: "#27D7F2",
+                    }}
+                    _hover={{
+                      color: "gray.200",
+                    }}
                   >
-                    <GlobeComponent
-                      realLocation={realLocation}
-                      proxyLocation={proxyLocation}
-                      relayLocation={relayLocation}
-                      rotating={false}
-                      enableOrbitControls={true}
-                      initialZoom={5}
-                      circuitHopCountries={circuitHopCountries}
-                      circuitHopCoordinates={circuitHopCoordinates}
-                    />
-                  </Box>
-                </Flex>
-              ) : (
-                <Box
-                  h="100%"
-                  w="100%"
-                  bg="rgba(10, 16, 18, 0.95)"
-                  border="1px solid rgba(22, 81, 103, 0.4)"
-                  overflow="hidden"
-                >
-                  <CircuitPathView />
-                </Box>
-              )}
+                    Overview
+                  </Tab>
+
+                  <Tab
+                    h="54px"
+                    px={1}
+                    color="gray.500"
+                    fontSize="13px"
+                    fontWeight="500"
+                    borderBottom="2px solid transparent"
+                    _selected={{
+                      color: "white",
+                      borderBottomColor: "#27D7F2",
+                    }}
+                    _hover={{
+                      color: "gray.200",
+                    }}
+                  >
+                    Rules
+                  </Tab>
+
+                  <Tab
+                    h="54px"
+                    px={1}
+                    color="gray.500"
+                    fontSize="13px"
+                    fontWeight="500"
+                    borderBottom="2px solid transparent"
+                    _selected={{
+                      color: "white",
+                      borderBottomColor: "#27D7F2",
+                    }}
+                    _hover={{
+                      color: "gray.200",
+                    }}
+                  >
+                    Activity
+                  </Tab>
+                </TabList>
+
+                <TabPanels flex="1" minH={0}>
+                  <TabPanel p={0} h="100%">
+                    {showAnimations ? (
+                      <Flex
+                        justifyContent="center"
+                        alignItems="center"
+                        position="relative"
+                        h="100%"
+                        w="100%"
+                        overflow="hidden"
+                        bg="black"
+                      >
+                        <Box
+                          position="absolute"
+                          h={screenSize.height}
+                          w={screenSize.width * 0.8}
+                          overflow="hidden"
+                          border="1px solid rgba(22, 81, 103, 0.8)"
+                        >
+                          <GlobeComponent
+                            realLocation={realLocation}
+                            proxyLocation={proxyLocation}
+                            relayLocation={relayLocation}
+                            rotating={false}
+                            enableOrbitControls={true}
+                            initialZoom={5}
+                            circuitHopCountries={circuitHopCountries}
+                            circuitHopCoordinates={circuitHopCoordinates}
+                          />
+                        </Box>
+                      </Flex>
+                    ) : (
+                      <Box
+                        h="100%"
+                        w="100%"
+                        bg="rgba(10, 16, 18, 0.95)"
+                        border="1px solid rgba(22, 81, 103, 0.4)"
+                        overflow="hidden"
+                      >
+                        <CircuitPathView />
+                      </Box>
+                    )}
+                  </TabPanel>
+
+                  <TabPanel p={0} h="100%">
+                    <RulesPanel headerBgColor={ipcCardText} />
+                  </TabPanel>
+
+                  <TabPanel p={0} h="100%">
+                    <ActivityPanel />
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
             </GridItem>
 
-            {proxyLocation && showAnimations && (
-              <GridItem
-                colSpan={1}
-                rowSpan={1}
-                maxH="100vh"
-                overflow={"hidden"}
-                p="10px 5px 5px 15px"
-                position="absolute"
-                left="400px"
-              >
-                <Flex
-                  bgColor={headerBgColor}
-                  height="max-content"
-                  w="300px"
-                  justifyContent={"center"}
-                  align="center"
-                  borderRadius="6px"
-                >
-                  <Button
-                    borderRadius="6px"
-                    bg="none"
-                    onClick={() =>
-                      showMore
-                        ? setShowMore(!showMore)
-                        : setTimeout(() => setShowMore(!showMore), 300)
-                    }
-                    w="300px"
-                  >
-                    {!showMore ? "Show Processes" : "Hide Processes"}
-                  </Button>
-                </Flex>
-                {showMore && (
-                  <GroupedProcesses
-                    groupedProcesses={groupedProcesses}
-                    proxyRunning={proxyRunning}
-                    bgColor={bgColor}
-                    showMore={showMore}
-                    setShowMore={setShowMore}
-                    isExpanded={true}
-                    total={groupedProcesses.length}
-                  />
-                )}
-              </GridItem>
-            )}
           </Grid>
         </motion.div>
       </Box>

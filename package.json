@@ -129,7 +129,32 @@
         "rpm"
       ],
       "icon": "resources/icon.png"
-    }
+    },
+    "files": [
+      "**/*",
+      "!node_modules/typescript{,/**}",
+      "!node_modules/country-flag-icons{,/**}",
+      "!renderer{,/**}",
+      "!dockerfile",
+      "!README.md",
+      "!notarize.js",
+      "!tsconfig.json",
+      "!tsconfig.tsbuildinfo",
+      "!patches{,/**}",
+      "!scripts{,/**}",
+      "!main{,/**}",
+      "!start.js",
+      "!.npmrc",
+      "!icon.png",
+      "!manifest.json",
+      "!node_modules/@anyone-protocol/anyone-client/src{,/**}",
+      "!node_modules/@anyone-protocol/anyone-client/MIGRATION.md",
+      "!node_modules/@anyone-protocol/anyone-client/tsconfig.json",
+      "!node_modules/@anyone-protocol/anyone-client/typedoc.json",
+      "!resources/background.png",
+      "!resources/icon.icns",
+      "!resources/icon.ico"
+    ]
   },
   "nsis": {
     "oneClick": false,

@@ -60,7 +60,7 @@ const CircuitPathView: React.FC = () => {
       {!proxyRunning || circuitHopCountries.length === 0 ? (
         <Flex direction="column" align="center" justify="center" h="80px" gap={1}>
           <Text fontSize="12px" color="gray.600">No circuit data yet</Text>
-          <Text fontSize="11px" color="gray.700">Browse something with the proxy running</Text>
+          <Text fontSize="11px" color="gray.700">Connect to view circuit details.</Text>
         </Flex>
       ) : (
         <>

@@ -5,7 +5,6 @@ import {
   HStack,
   Switch,
   Text,
-  VStack,
 } from "@chakra-ui/react";
 import FlagIcon from "./FlagIcon";
 
@@ -28,78 +27,164 @@ interface RuleBoxProps {
   proxyRunning: boolean;
 }
 
-export const RuleBox: React.FC<RuleBoxProps> = ({ rule, headerBgColor, deleteProxyRule, editProxyRule, toggleProxyRule, proxyRunning }) => {
+export const RuleBox: React.FC<RuleBoxProps> = ({
+  rule,
+  headerBgColor,
+  deleteProxyRule,
+  editProxyRule,
+  toggleProxyRule,
+  proxyRunning,
+}) => {
   const isEnabled = rule.enabled !== false;
+
+  const destinationSummary =
+    rule.destinations.length > 2
+      ? `${rule.destinations.slice(0, 2).join(", ")}, +${
+          rule.destinations.length - 2
+        } more`
+      : rule.destinations.join(", ");
 
   return (
     <Box
-      border="1px solid"
-      borderColor={isEnabled ? "gray.600" : "gray.700"}
-      borderRadius="md"
-      p={4}
-      bg="rgba(24, 24, 27, 0.70)"
-      backdropFilter="blur(4px)"
       w="100%"
+      border="1px solid"
+      borderColor={
+        isEnabled
+          ? "rgba(255,255,255,0.14)"
+          : "rgba(255,255,255,0.07)"
+      }
+      borderRadius="8px"
+      bg="rgba(255,255,255,0.018)"
+      px={4}
+      py={3}
       opacity={isEnabled ? 1 : 0.5}
+      transition="background 0.15s ease, border-color 0.15s ease"
+      _hover={{
+        bg: "rgba(255,255,255,0.028)",
+        borderColor: "rgba(255,255,255,0.20)",
+      }}
     >
-      <Flex justify="space-between" align="center" mb={3}>
-        <HStack spacing={3}>
+      <Flex
+        align="center"
+        justify="space-between"
+        gap={4}
+        minH="48px"
+      >
+        <Flex
+          align="center"
+          gap={3}
+          minW={0}
+          flex="1"
+        >
           <Switch
             size="sm"
             isChecked={isEnabled}
             onChange={() => toggleProxyRule(rule.id)}
             colorScheme="green"
           />
-          <Text color={isEnabled ? headerBgColor : "gray.500"} fontWeight="500">
-            {rule.title}
-          </Text>
-        </HStack>
-        <HStack spacing={2}>
-          <Button size="sm" colorScheme="blue" variant="ghost" onClick={() => editProxyRule(rule)} disabled={proxyRunning} _disabled={{
-            opacity: 0.5,
-            cursor: 'not-allowed',
-            color: 'gray.500'
-          }}>
+
+          <Box minW={0}>
+            <Text
+              color={isEnabled ? headerBgColor : "gray.500"}
+              fontWeight="500"
+              fontSize="14px"
+              noOfLines={1}
+            >
+              {rule.title}
+            </Text>
+
+            <Text
+              mt="2px"
+              fontSize="11px"
+              color="gray.500"
+              noOfLines={1}
+            >
+              {destinationSummary || "No destinations"}
+            </Text>
+          </Box>
+        </Flex>
+
+        <HStack spacing={2} flexShrink={0}>
+          <Box
+            px={3}
+            py="5px"
+            borderRadius="6px"
+            border="1px solid rgba(255,255,255,0.08)"
+            bg="rgba(255,255,255,0.02)"
+          >
+            <Text
+              color="gray.400"
+              fontSize="11px"
+              whiteSpace="nowrap"
+            >
+              {rule.hops} {rule.hops === 1 ? "hop" : "hops"}
+            </Text>
+          </Box>
+
+          {rule.exitCountries.map((country) => (
+            <Flex
+              key={country}
+              align="center"
+              gap={1}
+              px={3}
+              py="5px"
+              borderRadius="6px"
+              border="1px solid rgba(255,255,255,0.08)"
+              bg="rgba(255,255,255,0.02)"
+            >
+              <FlagIcon code={country} width={16} />
+
+              <Text
+                color="gray.300"
+                fontSize="11px"
+                whiteSpace="nowrap"
+              >
+                {country.toUpperCase()}
+              </Text>
+            </Flex>
+          ))}
+
+          <Button
+            size="sm"
+            variant="ghost"
+            color="gray.400"
+            fontSize="12px"
+            fontWeight="400"
+            onClick={() => editProxyRule(rule)}
+            isDisabled={proxyRunning}
+            _hover={{
+              color: "white",
+              bg: "rgba(255,255,255,0.05)",
+            }}
+            _disabled={{
+              opacity: 0.35,
+              cursor: "not-allowed",
+            }}
+          >
             Edit
           </Button>
-          <Button size="sm" colorScheme="red" variant="ghost" onClick={() => deleteProxyRule(rule.id)} disabled={proxyRunning} _disabled={{
-            opacity: 0.5,
-            cursor: 'not-allowed',
-            color: 'gray.500'
-          }}>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            color="red.300"
+            fontSize="12px"
+            fontWeight="400"
+            onClick={() => deleteProxyRule(rule.id)}
+            isDisabled={proxyRunning}
+            _hover={{
+              color: "red.200",
+              bg: "rgba(255,80,80,0.06)",
+            }}
+            _disabled={{
+              opacity: 0.35,
+              cursor: "not-allowed",
+            }}
+          >
             Delete
           </Button>
         </HStack>
       </Flex>
-
-      <VStack align="stretch" spacing={2}>
-        <Box>
-          <Text fontSize="xs" color="gray.400">Destinations:</Text>
-          <Text fontSize="sm" color="white">{rule.destinations.join(', ')}</Text>
-        </Box>
-
-        <Box>
-          <Text fontSize="xs" color="gray.400">Hops:</Text>
-          <Text fontSize="sm" color="white">{rule.hops}</Text>
-        </Box>
-
-        {/* <Box>
-          <Text fontSize="xs" color="gray.400">Entry Countries:</Text>
-          <Text fontSize="sm" color="white">{rule.entryCountries.join(', ')}</Text>
-        </Box> */}
-
-        <Box>
-          <Text fontSize="xs" color="gray.400">Exit Countries:</Text>
-          <Flex wrap="wrap" gap={2} mt={1}>
-            {rule.exitCountries.map(c => (
-              <Flex key={c} align="center" gap={1}>
-                <FlagIcon code={c} width={16} />
-                <Text fontSize="sm" color="white">{c.toUpperCase()}</Text>
-              </Flex>
-            ))}
-          </Flex>
-        </Box>
-      </VStack>
     </Box>
   );
-}; 
+};

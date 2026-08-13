@@ -112,6 +112,7 @@ export const SettingsComponent = ({
         w="100%"
         gap="5px"
         p="14px 5px"
+        minH="92px"
         position="relative"
       >
         <Box
@@ -166,6 +167,7 @@ export const SettingsComponent = ({
         w="100%"
         gap="5px"
         p="14px 5px"
+        minH="92px"
         position="relative"
       >
         <Box
@@ -233,6 +235,7 @@ export const SettingsComponent = ({
         w="100%"
         gap="5px"
         p="14px 5px"
+        minH="92px"
         position="relative"
       >
         <Box
@@ -284,6 +287,7 @@ export const SettingsComponent = ({
         w="100%"
         gap="5px"
         p="14px 5px"
+        minH="92px"
         position="relative"
       >
         <Box
@@ -339,6 +343,7 @@ export const SettingsComponent = ({
         w="100%"
         gap="5px"
         p="14px 5px"
+        minH="92px"
         position="relative"
       >
         <Box

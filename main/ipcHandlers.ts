@@ -176,7 +176,7 @@ export function setupIpcHandlers(mainWindow: BrowserWindow) {
   });
 
   ipcMain.handle("minimize-expanded-app", () => {
-    minimizeMainWindow();
+    return minimizeMainWindow();
   });
 
   ipcMain.handle("quit-app", async () => {

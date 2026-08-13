@@ -150,9 +150,26 @@ const ProxyStatus: React.FC<ProxyStatusProps> = ({
         display="flex"
         alignItems="center"
         justifyContent={"center"}
+        width="fit-content"
+        mx="auto"
         gap={2}
+        px={!proxyRunning && !isLoading && appBooted ? 4 : 0}
+        py={!proxyRunning && !isLoading && appBooted ? 2 : 0}
+        border={
+          !proxyRunning && !isLoading && appBooted
+            ? "1px solid rgba(255,255,255,0.18)"
+            : "1px solid transparent"
+        }
+        borderRadius="full"
+        transition="background 0.15s ease, border-color 0.15s ease"
         onClick={proxyRunning || isLoading ? handleStopProxy : handleStartProxy}
-        _hover={{ cursor: "pointer" }}
+        _hover={{
+          cursor: "pointer",
+          bg:
+            !proxyRunning && !isLoading && appBooted
+              ? "rgba(255,255,255,0.04)"
+              : "transparent",
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
