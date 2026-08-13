@@ -153,7 +153,13 @@
       "!node_modules/@anyone-protocol/anyone-client/typedoc.json",
       "!resources/background.png",
       "!resources/icon.icns",
-      "!resources/icon.ico"
+      "!resources/icon.ico",
+      "!anyone-protocol-anyone-client-1.1.11-beta.0.tgz",
+      "!node_modules/@anyone-protocol/anyone-client/bin/android{,/**}",
+      "!node_modules/@anyone-protocol/anyone-client/bin/ios{,/**}",
+      "!node_modules/@anyone-protocol/anyone-client/bin/linux{,/**}",
+      "!node_modules/@anyone-protocol/anyone-client/bin/win32{,/**}",
+      "!node_modules/@anyone-protocol/anyone-client/bin/darwin/x64{,/**}"
     ]
   },
   "nsis": {
