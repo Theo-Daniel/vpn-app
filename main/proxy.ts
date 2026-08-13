@@ -273,6 +273,7 @@ export async function startAnyoneProxy() {
                 socksPort,
                 controlPort,
                 configFile: configFilePath,
+                autoTermsAgreement: true,
             });
         } catch (error) {
             console.error("Error creating Anyone process:", error);
