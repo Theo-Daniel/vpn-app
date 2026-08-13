@@ -185,8 +185,48 @@ function createPersistentConfig(socksPort: number, controlPort: number, exePath:
         ...(fs.existsSync(geoipV6File) ? [`GeoIPv6File ${geoipV6File}`] : []),
     ];
 
-    // Always overwrite — ports change between runs
-    fs.writeFileSync(configFilePath, configLines.join("\n") + "\n");
+    // These settings are owned by the app and must be refreshed on each run.
+    // Preserve any other custom settings already present in anonrc.
+    const managedConfigKeys = new Set([
+        "datadirectory",
+        "socksport",
+        "orport",
+        "controlport",
+        "anyonehostsupdateinterval",
+        "geoipfile",
+        "geoipv6file",
+    ]);
+
+    let preservedConfigLines: string[] = [];
+
+    if (fs.existsSync(configFilePath)) {
+        const existingLines = fs
+            .readFileSync(configFilePath, "utf8")
+            .split(/\r?\n/);
+
+        preservedConfigLines = existingLines.filter((line) => {
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+                return false;
+            }
+
+            // Keep comments and custom settings.
+            if (trimmed.startsWith("#")) {
+                return true;
+            }
+
+            const key = trimmed.split(/\s+/, 1)[0].toLowerCase();
+            return !managedConfigKeys.has(key);
+        });
+    }
+
+    const finalConfigLines =
+        preservedConfigLines.length > 0
+            ? [...configLines, "", ...preservedConfigLines]
+            : configLines;
+
+    fs.writeFileSync(configFilePath, finalConfigLines.join("\n") + "\n");
 
     return configFilePath;
 }
