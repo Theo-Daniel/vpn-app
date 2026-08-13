@@ -99,9 +99,9 @@ async function getExecutablePathUnix(pid: string): Promise<string | null> {
   if (process.platform === "darwin") {
     try {
       const { stdout } = await execAsync(
-        `lsof -p ${pid} | grep txt | awk '{print $9}'`
+        `lsof -p ${pid} | awk '$4 == "txt" {print $9; exit}'`
       );
-      return stdout.trim();
+      return stdout.trim() || null;
     } catch (error: any) {
       console.error(
         `Error getting executable path for PID ${pid} on macOS:`,

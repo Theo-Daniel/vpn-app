@@ -85,7 +85,10 @@
       "icon": "resources/icon.icns",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
-      "identity": "Apple Development: Sarvesh Rajdev (GXAG86Q5C2)"
+      "identity": "Apple Development: Sarvesh Rajdev (GXAG86Q5C2)",
+      "electronLanguages": [
+        "en"
+      ]
     },
     "win": {
       "target": "nsis",

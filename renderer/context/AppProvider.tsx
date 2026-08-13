@@ -126,6 +126,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [globalExitCountry, setGlobalExitCountryState] = useState<string | null>(null);
 
   const windowSizeRef = useRef(windowSize);
+  const processIconCacheRef = useRef<Map<string, string>>(new Map());
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -176,11 +177,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.ipc) {
-      window.ipc.getShowAnimations().then((showAnimations) => {
-        setShowAnimations(showAnimations);
-      });
+      window.ipc.getShowAnimations().then(setShowAnimations);
     }
-  }, [showAnimations]);
+  }, []);
 
   useEffect(() => {
     // Update the ref whenever windowSize state changes
@@ -208,9 +207,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           setNumberOfRelays(relayData?.numberOfRelays);
           window.ipc
             .getGeolocation(relayData?.ip)
-            .then(async (location) => {
+            .then((location) => {
               setRelayLocation(location);
-              await new Promise((resolve) => setTimeout(resolve, 5000));
             });
         });
       });
@@ -218,18 +216,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const removeProxychangeListener = window.ipc.onProxyIPChanged((ip) => {
         console.log(ip, "proxyIp");
         setProxyIP(ip);
-        window.ipc.getGeolocation(ip).then(async (location) => {
+        window.ipc.getGeolocation(ip).then((location) => {
           setProxyLocation(location);
-          await new Promise((resolve) => setTimeout(resolve, 5000));
         });
       });
 
       const removeRealIPListener = window.ipc.onRealIPChanged((ip) => {
         console.log(ip, "realIp");
         setRealIP(ip);
-        window.ipc.getGeolocation(ip).then(async (location) => {
+        window.ipc.getGeolocation(ip).then((location) => {
           setRealLocation(location);
-          await new Promise((resolve) => setTimeout(resolve, 5000));
         });
       });
 
@@ -270,9 +266,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           setRelayData(relayData);
           window.ipc
             .getGeolocation(relayDataNew?.ip)
-            .then(async (location) => {
+            .then((location) => {
               setRelayLocation(location);
-              await new Promise((resolve) => setTimeout(resolve, 5000));
             });
         }
       );
@@ -396,12 +391,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         await window.ipc.getGroupedConnectedProcesses(port);
       const updatedProcesses = await Promise.all(
         processes.map(async (proc) => {
-          if (proc.iconPath) {
-            // Fetch the base64 image using IPC
-            const base64Image = await window.ipc.getIcon(proc.iconPath);
-            return { ...proc, iconPath: base64Image };
+          if (!proc.iconPath) {
+            return proc;
           }
-          return proc;
+
+          const cachedIcon = processIconCacheRef.current.get(proc.iconPath);
+          if (cachedIcon) {
+            return { ...proc, iconPath: cachedIcon };
+          }
+
+          const base64Image = await window.ipc.getIcon(proc.iconPath);
+
+          if (base64Image) {
+            processIconCacheRef.current.set(proc.iconPath, base64Image);
+          }
+
+          return { ...proc, iconPath: base64Image };
         })
       );
       setGroupedProcesses(updatedProcesses);
