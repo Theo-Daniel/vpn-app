@@ -3,7 +3,7 @@
   "name": "anyone-vpn-app",
   "description": "Anyone",
   "productName": "AnyoneVPN",
-  "version": "1.0.5-beta",
+  "version": "1.0.6-beta",
   "author": "Anyone Team <team@anyone.io>",
   "main": "app/main.js",
   "scripts": {
