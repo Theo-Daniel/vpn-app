@@ -162,7 +162,7 @@
       "!node_modules/@anyone-protocol/anyone-client/bin/ios{,/**}",
       "!node_modules/@anyone-protocol/anyone-client/bin/linux{,/**}",
       "!node_modules/@anyone-protocol/anyone-client/bin/win32{,/**}",
-      "!node_modules/@anyone-protocol/anyone-client/bin/darwin/x64{,/**}"
+      "!node_modules/@anyone-protocol/anyone-client/bin/darwin{,/**}"
     ]
   },
   "nsis": {
