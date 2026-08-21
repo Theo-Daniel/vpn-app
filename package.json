@@ -95,8 +95,8 @@
       "icon": "resources/icon.ico",
       "extraResources": [
         {
-          "from": "node_modules/@anyone-protocol/anyone-client/bin/win32/x64/anon.exe",
-          "to": "bin/win32/x64/anon.exe"
+          "from": "node_modules/@anyone-protocol/anyone-client/bin/win32/x64",
+          "to": "app.asar.unpacked/node_modules/@anyone-protocol/anyone-client/bin/win32/x64"
         }
       ]
     },

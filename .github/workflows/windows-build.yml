@@ -1,0 +1,49 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/windows-build
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.16.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Windows Anon runtime
+        shell: pwsh
+        run: |
+          Write-Host "Windows SDK runtime files:"
+          Get-ChildItem -Recurse node_modules/@anyone-protocol/anyone-client/bin/win32/x64
+
+          if (-not (Test-Path "node_modules/@anyone-protocol/anyone-client/bin/win32/x64/anon.exe")) {
+            throw "anon.exe was not downloaded by the SDK postinstall"
+          }
+
+      - name: Build Windows x64
+        run: npm run build:win
+
+      - name: Show build output
+        shell: pwsh
+        run: Get-ChildItem -Recurse dist
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyoneVPN-1.0.6-beta-windows-x64
+          path: |
+            dist/*.exe
+          if-no-files-found: error
