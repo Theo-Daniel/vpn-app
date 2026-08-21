@@ -131,7 +131,13 @@
         "deb",
         "rpm"
       ],
-      "icon": "resources/icon.png"
+      "icon": "resources/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/@anyone-protocol/anyone-client/bin/linux/x64",
+          "to": "app.asar.unpacked/node_modules/@anyone-protocol/anyone-client/bin/linux/x64"
+        }
+      ]
     },
     "files": [
       "**/*",
