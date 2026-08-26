@@ -1,0 +1,102 @@
+name: Sign Windows Installer
+
+on:
+  push:
+    branches:
+      - feat/country-resolution-test
+    paths:
+      - '.github/workflows/sign-windows-private.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  sign:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download exact unsigned installer from draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releases = gh api "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" | ConvertFrom-Json
+
+          $release = $releases |
+            Where-Object { $_.draft -eq $true -and $_.name -eq "Signing Input Temp" } |
+            Select-Object -First 1
+
+          if (-not $release) {
+            throw "Draft release 'Signing Input Temp' was not found."
+          }
+
+          $asset = $release.assets |
+            Where-Object { $_.name -eq "AnyoneVPN.Setup.1.0.6-beta.exe" } |
+            Select-Object -First 1
+
+          if (-not $asset) {
+            throw "Installer asset was not found in the draft release."
+          }
+
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\signing-input" | Out-Null
+
+          curl.exe -L `
+            -H "Accept: application/octet-stream" `
+            -H "Authorization: Bearer $env:GH_TOKEN" `
+            -H "X-GitHub-Api-Version: 2022-11-28" `
+            -o "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe" `
+            "$($asset.url)"
+
+          Get-FileHash "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe" -Algorithm SHA256
+
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign installer
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: anyone-vpn-signing
+          certificate-profile-name: AnyoneVPN-PrivateTrust
+          files: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          exclude-environment-credential: true
+          exclude-workload-identity-credential: true
+          exclude-managed-identity-credential: true
+          exclude-shared-token-cache-credential: true
+          exclude-visual-studio-credential: true
+          exclude-visual-studio-code-credential: true
+          exclude-azure-cli-credential: false
+          exclude-azure-powershell-credential: true
+          exclude-azure-developer-cli-credential: true
+          exclude-interactive-browser-credential: true
+
+      - name: Check signature
+        shell: pwsh
+        run: |
+          $file = "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe"
+          $sig = Get-AuthenticodeSignature $file
+
+          $sig | Format-List Status,StatusMessage,SignatureType,SignerCertificate
+
+          if (-not $sig.SignerCertificate) {
+            throw "No Authenticode signature found."
+          }
+
+          Write-Host "Signed by: $($sig.SignerCertificate.Subject)"
+          Write-Host "Signature detected successfully."
+
+      - name: Upload signed installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyoneVPN-1.0.6-beta-Windows-signed
+          path: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe
+          if-no-files-found: error
+          retention-days: 7
