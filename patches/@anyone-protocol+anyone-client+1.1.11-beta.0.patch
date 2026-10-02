@@ -1,0 +1,122 @@
+diff --git a/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js b/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
+index 842a24d..b313650 100644
+--- a/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
++++ b/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
+@@ -211,42 +211,18 @@ class RelayManager {
+                     staleIps.push(relay.ip);
+                 }
+             }
+-            // Truly unknown IPs still need to be resolved before startup so the
+-            // initial exits-by-country map is complete.
+-            const uncached = relays.filter(relay => !relay.country);
+-            if (uncached.length > 0) {
+-                const CONCURRENCY = 24;
+-                let cursor = 0;
+-                let dirty = false;
+-                const worker = () => __awaiter(this, void 0, void 0, function* () {
+-                    while (cursor < uncached.length) {
+-                        const relay = uncached[cursor++];
+-                        try {
+-                            const country = yield this.getCountry(relay.ip, 3000);
+-                            if (country && country !== '??') {
+-                                relay.country = country;
+-                                dirty = true;
+-                            }
+-                        }
+-                        catch (_a) {
+-                            // Best-effort: leave relay.country unset, it'll retry next refresh.
+-                        }
+-                    }
+-                });
+-                yield Promise.all(Array.from({ length: Math.min(CONCURRENCY, uncached.length) }, worker));
+-                if (dirty) {
+-                    yield this.countryCache.saveCache();
+-                }
+-            }
+-            // Stale mappings are already usable by StateManager/VPNManager.
+-            // Queue their refresh now; CountryCache starts paused, and the VPN app
+-            // resumes background resolution only after VPNManager.initialize().
+-            if (staleIps.length > 0) {
+-                console.log(`Queueing ${staleIps.length} stale country mappings for background refresh`);
++            // Do not block VPN startup on uncached country lookups.
++            // Fresh/stale mappings are used immediately; unknown IPs are refreshed in background.
++            const uncachedIps = relays
++                .filter(relay => !relay.country)
++                .map(relay => relay.ip);
++            const backgroundIps = [...new Set([...staleIps, ...uncachedIps])];
++            if (backgroundIps.length > 0) {
++                console.log(`Queueing ${backgroundIps.length} country mappings for background refresh`);
+                 const resolver = (ip) => __awaiter(this, void 0, void 0, function* () {
+                     return yield this.getCountry(ip, 3000);
+                 });
+-                this.countryCache.populateInBackground(staleIps, resolver);
++                this.countryCache.populateInBackground(backgroundIps, resolver);
+             }
+         });
+     }
+diff --git a/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts b/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
+index 4dc32a1..a0c46ca 100644
+--- a/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
++++ b/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
+@@ -244,50 +244,24 @@ export class RelayManager {
+             }
+         }
+ 
+-        // Truly unknown IPs still need to be resolved before startup so the
+-        // initial exits-by-country map is complete.
+-        const uncached = relays.filter(relay => !relay.country);
+-
+-        if (uncached.length > 0) {
+-            const CONCURRENCY = 24;
+-            let cursor = 0;
+-            let dirty = false;
+-
+-            const worker = async () => {
+-                while (cursor < uncached.length) {
+-                    const relay = uncached[cursor++];
+-                    try {
+-                        const country = await this.getCountry(relay.ip, 3000);
+-                        if (country && country !== '??') {
+-                            relay.country = country;
+-                            dirty = true;
+-                        }
+-                    } catch {
+-                        // Best-effort: leave relay.country unset, it'll retry next refresh.
+-                    }
+-                }
+-            };
++        // Do not block VPN startup on uncached country lookups.
++        // Fresh/stale mappings are used immediately; unknown IPs are refreshed in background.
++        const uncachedIps = relays
++            .filter(relay => !relay.country)
++            .map(relay => relay.ip);
+ 
+-            await Promise.all(
+-                Array.from({ length: Math.min(CONCURRENCY, uncached.length) }, worker)
+-            );
++        const backgroundIps = [...new Set([...staleIps, ...uncachedIps])];
+ 
+-            if (dirty) {
+-                await this.countryCache!.saveCache();
+-            }
+-        }
+-
+-        // Stale mappings are already usable by StateManager/VPNManager.
+-        // Queue their refresh now; CountryCache starts paused, and the VPN app
+-        // resumes background resolution only after VPNManager.initialize().
+-        if (staleIps.length > 0) {
+-            console.log(`Queueing ${staleIps.length} stale country mappings for background refresh`);
++        if (backgroundIps.length > 0) {
++            console.log(
++                `Queueing ${backgroundIps.length} country mappings for background refresh`
++            );
+ 
+             const resolver = async (ip: string) => {
+                 return await this.getCountry(ip, 3000);
+             };
+ 
+-            this.countryCache!.populateInBackground(staleIps, resolver);
++            this.countryCache!.populateInBackground(backgroundIps, resolver);
+         }
+     }
+ 
