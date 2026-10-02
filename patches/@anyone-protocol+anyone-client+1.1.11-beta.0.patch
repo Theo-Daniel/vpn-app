@@ -1,8 +1,8 @@
 diff --git a/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js b/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
-index 842a24d..b313650 100644
+index 842a24d..bdd374b 100644
 --- a/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
 +++ b/node_modules/@anyone-protocol/anyone-client/out/relay-manager.js
-@@ -211,42 +211,18 @@ class RelayManager {
+@@ -211,42 +211,37 @@ class RelayManager {
                      staleIps.push(relay.ip);
                  }
              }
@@ -31,34 +31,124 @@ index 842a24d..b313650 100644
 -                yield Promise.all(Array.from({ length: Math.min(CONCURRENCY, uncached.length) }, worker));
 -                if (dirty) {
 -                    yield this.countryCache.saveCache();
--                }
--            }
--            // Stale mappings are already usable by StateManager/VPNManager.
--            // Queue their refresh now; CountryCache starts paused, and the VPN app
--            // resumes background resolution only after VPNManager.initialize().
--            if (staleIps.length > 0) {
--                console.log(`Queueing ${staleIps.length} stale country mappings for background refresh`);
 +            // Do not block VPN startup on uncached country lookups.
 +            // Fresh/stale mappings are used immediately; unknown IPs are refreshed in background.
 +            const uncachedIps = relays
 +                .filter(relay => !relay.country)
 +                .map(relay => relay.ip);
 +            const backgroundIps = [...new Set([...staleIps, ...uncachedIps])];
++            // Keep references to relays for each IP so successful background
++            // resolution updates the live relay objects as well as the cache.
++            const relaysByIp = new Map();
++            for (const relay of relays) {
++                const existing = relaysByIp.get(relay.ip);
++                if (existing) {
++                    existing.push(relay);
++                }
++                else {
++                    relaysByIp.set(relay.ip, [relay]);
+                 }
+             }
+-            // Stale mappings are already usable by StateManager/VPNManager.
+-            // Queue their refresh now; CountryCache starts paused, and the VPN app
+-            // resumes background resolution only after VPNManager.initialize().
+-            if (staleIps.length > 0) {
+-                console.log(`Queueing ${staleIps.length} stale country mappings for background refresh`);
 +            if (backgroundIps.length > 0) {
 +                console.log(`Queueing ${backgroundIps.length} country mappings for background refresh`);
                  const resolver = (ip) => __awaiter(this, void 0, void 0, function* () {
-                     return yield this.getCountry(ip, 3000);
+-                    return yield this.getCountry(ip, 3000);
++                    var _a;
++                    const country = yield this.getCountry(ip, 3000);
++                    if (country && country !== '??') {
++                        for (const relay of (_a = relaysByIp.get(ip)) !== null && _a !== void 0 ? _a : []) {
++                            relay.country = country;
++                        }
++                    }
++                    return country;
                  });
 -                this.countryCache.populateInBackground(staleIps, resolver);
 +                this.countryCache.populateInBackground(backgroundIps, resolver);
              }
          });
      }
+diff --git a/node_modules/@anyone-protocol/anyone-client/out/state-manager.js b/node_modules/@anyone-protocol/anyone-client/out/state-manager.js
+index 4c2f245..25fc137 100644
+--- a/node_modules/@anyone-protocol/anyone-client/out/state-manager.js
++++ b/node_modules/@anyone-protocol/anyone-client/out/state-manager.js
+@@ -57,6 +57,7 @@ class StateManager extends events_1.EventEmitter {
+         this.allRelays = [];
+         this.guards = [];
+         this.exitsByCountry = new Map();
++        this.countryIndexLastBuiltAt = 0;
+         // Lifecycle
+         this.isInitialized = false;
+         this.isShuttingDown = false;
+@@ -219,14 +220,41 @@ class StateManager extends events_1.EventEmitter {
+      * Get cached exit relays for a country
+      */
+     getExitsByCountry(country) {
++        this.rebuildExitCountryIndex();
+         return this.exitsByCountry.get(country.toLowerCase()) || [];
+     }
+     /**
+      * Get all countries with cached exits
+      */
+     getAvailableCountries() {
++        this.rebuildExitCountryIndex();
+         return [...this.exitsByCountry.keys()];
+     }
++    /**
++     * Rebuild the exit-country index from the current relay objects.
++     * Background country resolution updates relay.country in-place.
++     */
++    rebuildExitCountryIndex(force = false) {
++        const now = Date.now();
++        // getAvailableCountries() is followed by many getExitsByCountry()
++        // calls, so avoid rescanning thousands of relays for every count.
++        if (!force && now - this.countryIndexLastBuiltAt < 1000) {
++            return;
++        }
++        let exits = this.control.filterRelaysByFlags(this.allRelays, models_1.Flag.Exit, models_1.Flag.Running);
++        exits = exits.filter(exit => !exit.flags.includes(models_1.Flag.BadExit));
++        this.exitsByCountry.clear();
++        for (const exit of exits) {
++            if (!exit.country)
++                continue;
++            const country = exit.country.toLowerCase();
++            if (!this.exitsByCountry.has(country)) {
++                this.exitsByCountry.set(country, []);
++            }
++            this.exitsByCountry.get(country).push(exit);
++        }
++        this.countryIndexLastBuiltAt = now;
++    }
+     /**
+      * Refresh the relay cache from Control
+      */
+@@ -244,16 +272,7 @@ class StateManager extends events_1.EventEmitter {
+                 yield this.control.populateCountries(exits);
+             }
+             // Group exits by country
+-            this.exitsByCountry.clear();
+-            for (const exit of exits) {
+-                if (!exit.country)
+-                    continue;
+-                const country = exit.country.toLowerCase();
+-                if (!this.exitsByCountry.has(country)) {
+-                    this.exitsByCountry.set(country, []);
+-                }
+-                this.exitsByCountry.get(country).push(exit);
+-            }
++            this.rebuildExitCountryIndex(true);
+             this.emit(models_1.StateManagerEvent.RELAYS_UPDATED, {
+                 totalRelays: relays.length,
+                 guards: this.guards.length,
 diff --git a/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts b/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
-index 4dc32a1..a0c46ca 100644
+index 4dc32a1..7b02c2f 100644
 --- a/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
 +++ b/node_modules/@anyone-protocol/anyone-client/src/relay-manager.ts
-@@ -244,50 +244,24 @@ export class RelayManager {
+@@ -244,50 +244,46 @@ export class RelayManager {
              }
          }
  
@@ -95,12 +185,23 @@ index 4dc32a1..a0c46ca 100644
 -                Array.from({ length: Math.min(CONCURRENCY, uncached.length) }, worker)
 -            );
 +        const backgroundIps = [...new Set([...staleIps, ...uncachedIps])];
++
++        // Keep references to relays for each IP so successful background
++        // resolution updates the live relay objects as well as the cache.
++        const relaysByIp = new Map<string, RelayInfo[]>();
++
++        for (const relay of relays) {
++            const existing = relaysByIp.get(relay.ip);
  
 -            if (dirty) {
 -                await this.countryCache!.saveCache();
--            }
--        }
--
++            if (existing) {
++                existing.push(relay);
++            } else {
++                relaysByIp.set(relay.ip, [relay]);
+             }
+         }
+ 
 -        // Stale mappings are already usable by StateManager/VPNManager.
 -        // Queue their refresh now; CountryCache starts paused, and the VPN app
 -        // resumes background resolution only after VPNManager.initialize().
@@ -112,7 +213,16 @@ index 4dc32a1..a0c46ca 100644
 +            );
  
              const resolver = async (ip: string) => {
-                 return await this.getCountry(ip, 3000);
+-                return await this.getCountry(ip, 3000);
++                const country = await this.getCountry(ip, 3000);
++
++                if (country && country !== '??') {
++                    for (const relay of relaysByIp.get(ip) ?? []) {
++                        relay.country = country;
++                    }
++                }
++
++                return country;
              };
  
 -            this.countryCache!.populateInBackground(staleIps, resolver);
@@ -120,3 +230,89 @@ index 4dc32a1..a0c46ca 100644
          }
      }
  
+diff --git a/node_modules/@anyone-protocol/anyone-client/src/state-manager.ts b/node_modules/@anyone-protocol/anyone-client/src/state-manager.ts
+index be2ce07..f31fc61 100644
+--- a/node_modules/@anyone-protocol/anyone-client/src/state-manager.ts
++++ b/node_modules/@anyone-protocol/anyone-client/src/state-manager.ts
+@@ -62,6 +62,7 @@ export class StateManager extends EventEmitter {
+     private allRelays: RelayInfo[] = [];
+     private guards: RelayInfo[] = [];
+     private exitsByCountry: Map<string, RelayInfo[]> = new Map();
++    private countryIndexLastBuiltAt: number = 0;
+ 
+     // Lifecycle
+     private isInitialized: boolean = false;
+@@ -251,6 +252,7 @@ export class StateManager extends EventEmitter {
+      * Get cached exit relays for a country
+      */
+     getExitsByCountry(country: string): RelayInfo[] {
++        this.rebuildExitCountryIndex();
+         return this.exitsByCountry.get(country.toLowerCase()) || [];
+     }
+ 
+@@ -258,9 +260,48 @@ export class StateManager extends EventEmitter {
+      * Get all countries with cached exits
+      */
+     getAvailableCountries(): string[] {
++        this.rebuildExitCountryIndex();
+         return [...this.exitsByCountry.keys()];
+     }
+ 
++    /**
++     * Rebuild the exit-country index from the current relay objects.
++     * Background country resolution updates relay.country in-place.
++     */
++    private rebuildExitCountryIndex(force: boolean = false): void {
++        const now = Date.now();
++
++        // getAvailableCountries() is followed by many getExitsByCountry()
++        // calls, so avoid rescanning thousands of relays for every count.
++        if (!force && now - this.countryIndexLastBuiltAt < 1000) {
++            return;
++        }
++
++        let exits = this.control.filterRelaysByFlags(
++            this.allRelays,
++            Flag.Exit,
++            Flag.Running
++        );
++
++        exits = exits.filter(exit => !exit.flags.includes(Flag.BadExit));
++
++        this.exitsByCountry.clear();
++
++        for (const exit of exits) {
++            if (!exit.country) continue;
++
++            const country = exit.country.toLowerCase();
++
++            if (!this.exitsByCountry.has(country)) {
++                this.exitsByCountry.set(country, []);
++            }
++
++            this.exitsByCountry.get(country)!.push(exit);
++        }
++
++        this.countryIndexLastBuiltAt = now;
++    }
++
+     /**
+      * Refresh the relay cache from Control
+      */
+@@ -287,15 +328,7 @@ export class StateManager extends EventEmitter {
+         }
+ 
+         // Group exits by country
+-        this.exitsByCountry.clear();
+-        for (const exit of exits) {
+-            if (!exit.country) continue;
+-            const country = exit.country.toLowerCase();
+-            if (!this.exitsByCountry.has(country)) {
+-                this.exitsByCountry.set(country, []);
+-            }
+-            this.exitsByCountry.get(country)!.push(exit);
+-        }
++        this.rebuildExitCountryIndex(true);
+ 
+         this.emit(StateManagerEvent.RELAYS_UPDATED, {
+             totalRelays: relays.length,
