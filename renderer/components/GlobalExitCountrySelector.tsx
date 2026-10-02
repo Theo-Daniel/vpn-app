@@ -23,7 +23,18 @@ const GlobalExitCountrySelector: React.FC<Props> = ({
 
   useEffect(() => {
     fetchCountries();
-    return window.ipc.onProxyStarted(fetchCountries);
+
+    const removeProxyStartedListener =
+      window.ipc.onProxyStarted(fetchCountries);
+
+    // Background country resolution updates StateManager while connected.
+    // Refresh the selector periodically so newly resolved exits appear live.
+    const interval = setInterval(fetchCountries, 5000);
+
+    return () => {
+      clearInterval(interval);
+      removeProxyStartedListener();
+    };
   }, []);
 
   const displayCountries =
