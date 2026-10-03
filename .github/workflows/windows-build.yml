@@ -43,7 +43,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: AnyoneVPN-1.0.6-beta-windows-x64
+          name: AnyoneVPN-1.0.7-beta-windows-x64
           path: |
             dist/*.exe
           if-no-files-found: error
