@@ -32,7 +32,7 @@ jobs:
           }
 
           $asset = $release.assets |
-            Where-Object { $_.name -eq "AnyoneVPN.Setup.1.0.6-beta.exe" } |
+            Where-Object { $_.name -eq "AnyoneVPN.Setup.1.0.7-beta.exe" } |
             Select-Object -First 1
 
           if (-not $asset) {
@@ -45,10 +45,10 @@ jobs:
             -H "Accept: application/octet-stream" `
             -H "Authorization: Bearer $env:GH_TOKEN" `
             -H "X-GitHub-Api-Version: 2022-11-28" `
-            -o "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe" `
+            -o "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.7-beta.exe" `
             "$($asset.url)"
 
-          Get-FileHash "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe" -Algorithm SHA256
+          Get-FileHash "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.7-beta.exe" -Algorithm SHA256
 
       - name: Azure login
         uses: azure/login@v3
@@ -63,7 +63,7 @@ jobs:
           endpoint: https://eus.codesigning.azure.net/
           signing-account-name: anyone-vpn-signing
           certificate-profile-name: AnyoneVPN-PrivateTrust
-          files: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe
+          files: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.7-beta.exe
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
@@ -81,7 +81,7 @@ jobs:
       - name: Check signature
         shell: pwsh
         run: |
-          $file = "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe"
+          $file = "$env:GITHUB_WORKSPACE\signing-input\AnyoneVPN.Setup.1.0.7-beta.exe"
           $sig = Get-AuthenticodeSignature $file
 
           $sig | Format-List Status,StatusMessage,SignatureType,SignerCertificate
@@ -96,7 +96,7 @@ jobs:
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
         with:
-          name: AnyoneVPN-1.0.6-beta-Windows-signed
-          path: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.6-beta.exe
+          name: AnyoneVPN-1.0.7-beta-Windows-signed
+          path: ${{ github.workspace }}\signing-input\AnyoneVPN.Setup.1.0.7-beta.exe
           if-no-files-found: error
           retention-days: 7
